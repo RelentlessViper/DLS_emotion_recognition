@@ -5,6 +5,8 @@ from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Colle
 from PIL import Image
 from torchvision import transforms
 from Scripts import embedding
+import matplotlib.pyplot as plt
+from matplotlib.image import imread
 
 def initialize_table():
     fields = [
@@ -109,6 +111,17 @@ def search_nearest_neighbors(collection_name, query_embedding, k=5):
         print(
             f"ID: {result.id}, Distance: {result.distance}, Class: {result.entity.get('class')}, Name: {result.entity.get('name')}")
 
+    fig, axes = plt.subplots(1, k, figsize=(15, 5))
+    for i, result in enumerate(results[0]):
+        image_path = f"{"Data/train"}/{result.entity.get('class')}/{result.entity.get('name')}"
+        img = imread(image_path)
+
+        axes[i].imshow(img)
+        axes[i].set_title(f"ID: {result.id}\nDist: {result.distance:.2f}\nClass: {result.entity.get('class')}")
+        axes[i].axis('off')
+
+    plt.show()
+
 if __name__ == '__main__':
     connections.connect("default", host="localhost", port="19530")
     # dropped = Collection("emotion_collection")
@@ -122,7 +135,7 @@ if __name__ == '__main__':
     collection.load()
     results = collection.query(expr="", output_fields=["id", "embedding", "class", "name"], limit=1000)
     embedding_generator = embedding.Embedding_generator("Models/encoder_v1.pth")
-    test_embedding = embedding_generator("Data/train/fear/augmented_120.png")
+    test_embedding = embedding_generator("Data/train/disgust/augmented_201.png")
     print(test_embedding)
     # query_embedding = np.random.random(128).astype(np.float32).tolist()
     search_nearest_neighbors("emotion_collection", test_embedding, k=5)
